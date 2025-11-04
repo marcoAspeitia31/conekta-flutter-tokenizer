@@ -8,7 +8,7 @@
 
 class AppConfig {
   // Clave pública de Conekta (obtenla desde https://panel.conekta.com)
-  static const String conektaPublicKey = 'key_tu_clave_publica_aqui';
+  static const String conektaPublicKey = 'key_EonEUrFrtJ6DqUMrDPCrhfQ';
 
   // Configuración del backend (opcional)
   static const String? backendUrl = 'https://conekta-payments.local';
