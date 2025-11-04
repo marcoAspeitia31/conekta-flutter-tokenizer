@@ -70,9 +70,105 @@ Como estás en WSL2, la forma más fácil es conectar el dispositivo desde Windo
    flutter devices
    ```
 
-8. **Ejecuta la app:**
+8. **Habilita la plataforma Android en el proyecto (si es necesario):**
+   
+   Si al ejecutar `flutter devices` ves tu dispositivo pero `flutter run` dice "No supported devices connected", necesitas habilitar Android en el proyecto:
+   
+   ```bash
+   cd /home/marcoaspeitia/Proyects/conekta-flutter-tokenizer
+   flutter create --platforms=android --project-name=conekta_flutter_tokenizer .
+   ```
+   
+   **Nota:** Si el nombre de tu directorio tiene guiones (como `conekta-flutter-tokenizer`), usa el parámetro `--project-name` con el nombre del paquete de tu `pubspec.yaml` (con guiones bajos).
+   
+   Esto generará los archivos necesarios para Android sin modificar tu código existente.
+
+9. **Instala Java y configura JAVA_HOME (requerido para compilar Android):**
+   
+   Flutter necesita Java para compilar aplicaciones Android. Instálalo en WSL2:
+   
+   ```bash
+   # Instalar Java JDK 17 (recomendado para Flutter)
+   sudo apt update
+   sudo apt install -y openjdk-17-jdk
+   ```
+   
+   **Configura JAVA_HOME:**
+   
+   ```bash
+   # Encuentra la ruta de Java
+   java -XshowSettings:properties -version 2>&1 | grep 'java.home'
+   # O simplemente:
+   which java
+   ```
+   
+   **Agrega JAVA_HOME a tu perfil de shell:**
+   
+   ```bash
+   # Para zsh (tu shell actual)
+   echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> ~/.zshrc
+   echo 'export PATH=$PATH:$JAVA_HOME/bin' >> ~/.zshrc
+   source ~/.zshrc
+   ```
+   
+   **Verifica la instalación:**
+   ```bash
+   java -version
+   echo $JAVA_HOME
+   ```
+   
+   Deberías ver la versión de Java y la ruta de JAVA_HOME.
+
+10. **Configura ANDROID_HOME para usar tu SDK instalado:**
+   
+   Si instalaste el Android SDK en `~/android-sdk`, configura Flutter para usarlo:
+   
+   ```bash
+   # Agregar ANDROID_HOME a tu perfil de shell
+   echo 'export ANDROID_HOME=$HOME/android-sdk' >> ~/.zshrc
+   echo 'export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin' >> ~/.zshrc
+   echo 'export PATH=$PATH:$ANDROID_HOME/platform-tools' >> ~/.zshrc
+   source ~/.zshrc
+   ```
+   
+   **Instala los componentes necesarios del SDK:**
+   
+   ```bash
+   # Instalar Platform 34 y Build-Tools 30.0.3 (requeridos por el proyecto)
+   $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;30.0.3"
+   ```
+   
+   **Configura el proyecto para usar tu SDK:**
+   
+   Edita o crea el archivo `android/local.properties` en tu proyecto:
+   
+   ```bash
+   cd /home/marcoaspeitia/Proyects/conekta-flutter-tokenizer
+   echo "sdk.dir=$HOME/android-sdk" > android/local.properties
+   echo "flutter.sdk=$(flutter --version | head -1 | awk '{print $2}')" >> android/local.properties
+   ```
+   
+   O edítalo manualmente para que contenga:
+   ```
+   sdk.dir=/home/marcoaspeitia/android-sdk
+   ```
+   
+   **Verifica la configuración:**
+   ```bash
+   echo $ANDROID_HOME
+   flutter doctor -v
+   ```
+   
+   Flutter debería detectar tu SDK y las licencias aceptadas.
+
+11. **Ejecuta la app:**
    ```bash
    flutter run
+   ```
+   
+   O si quieres especificar el dispositivo:
+   ```bash
+   flutter run -d 192.168.100.41:5555
    ```
 
 ---
@@ -137,6 +233,60 @@ flutter emulators --launch <nombre_emulador>
 ### Si el dispositivo aparece como "unauthorized":
 - Acepta el diálogo de "Permitir depuración USB" en tu celular
 - Revisa que la depuración USB esté activada
+
+### Si `flutter run` dice "No supported devices connected" pero `flutter devices` muestra tu dispositivo:
+- El proyecto no tiene configurada la plataforma Android
+- Ejecuta: `flutter create --platforms=android --project-name=conekta_flutter_tokenizer .`
+- Esto generará los archivos necesarios sin modificar tu código
+- Luego intenta `flutter run` nuevamente
+
+### Si `flutter create` da error "is not a valid Dart package name":
+- El nombre del directorio tiene guiones pero Dart requiere guiones bajos
+- Usa el parámetro `--project-name` con el nombre correcto de tu `pubspec.yaml`
+- Ejemplo: `flutter create --platforms=android --project-name=conekta_flutter_tokenizer .`
+
+### Si `flutter run` da error "JAVA_HOME is not set" o "no 'java' command could be found":
+- Java no está instalado o JAVA_HOME no está configurado
+- Instala Java JDK 17: `sudo apt install -y openjdk-17-jdk`
+- Configura JAVA_HOME en tu `.zshrc` o `.bashrc`:
+  ```bash
+  echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> ~/.zshrc
+  echo 'export PATH=$PATH:$JAVA_HOME/bin' >> ~/.zshrc
+  source ~/.zshrc
+  ```
+- Verifica con: `java -version` y `echo $JAVA_HOME`
+
+### Si `flutter run` da error "The SDK directory is not writable (/usr/lib/android-sdk)":
+- El SDK en `/usr/lib/android-sdk` no tiene permisos de escritura
+- **Solución:** Configura el proyecto para usar tu SDK en `~/android-sdk`:
+  1. Configura `ANDROID_HOME`:
+     ```bash
+     echo 'export ANDROID_HOME=$HOME/android-sdk' >> ~/.zshrc
+     echo 'export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin' >> ~/.zshrc
+     echo 'export PATH=$PATH:$ANDROID_HOME/platform-tools' >> ~/.zshrc
+     source ~/.zshrc
+     ```
+  2. Instala los componentes necesarios:
+     ```bash
+     $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;30.0.3"
+     ```
+  3. **Edita `android/local.properties`** para apuntar a tu SDK:
+     ```
+     sdk.dir=/home/marcoaspeitia/android-sdk
+     ```
+- Verifica con: `echo $ANDROID_HOME` y `flutter doctor -v`
+
+### Si `flutter run` da error sobre licencias no aceptadas:
+- Si instalaste el SDK en `~/android-sdk`, acepta las licencias:
+  ```bash
+  yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+  ```
+- Si Flutter está usando `/usr/lib/android-sdk`, copia las licencias:
+  ```bash
+  sudo mkdir -p /usr/lib/android-sdk/licenses
+  sudo cp ~/android-sdk/licenses/* /usr/lib/android-sdk/licenses/
+  ```
+- O mejor aún, configura `ANDROID_HOME` para usar tu SDK (ver solución anterior)
 
 ### Si necesitas reinstalar adb en WSL2/Linux:
 ```bash
